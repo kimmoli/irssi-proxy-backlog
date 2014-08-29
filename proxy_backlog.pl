@@ -24,7 +24,6 @@ Irssi::settings_add_int($IRSSI{'name'}, 'proxy_backlog_lines',       10);
 sub sendbacklog {
 	my ($server) = @_;
 	my (@lines) = ();
-	my $totalLines = 0;
 
 	my ($timenow) = DateTime->now();
 	$timenow->set_time_zone( 'local' );
@@ -40,6 +39,7 @@ sub sendbacklog {
 		Irssi::signal_add_first('print text', 'stop_sig');
 
 		my $window = $server->window_find_item($channel->{'name'});
+		my $totalLines = 0;
 
 		for (my $line = $window->view->get_lines; defined($line); $line = $line->next) {
 			$totalLines ++;
