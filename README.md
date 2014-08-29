@@ -7,8 +7,9 @@ Uses server-time tagging http://ircv3.atheme.org/extensions/server-time-3.2
 
 settings and defaults are:
 
-'''proxy_backlog_lines 10''' Number of lines to send
+```proxy_backlog_lines 10``` Number of lines to send (does send only 10 last lines, change to e.g. 100 ?)
 
-To request new backlogs, send '''/CTCP -proxy- IRSSIPROXY BACKLOG SEND'''
+To request new backlogs, send ```/CTCP -proxy- IRSSIPROXY BACKLOG SEND```
 
+If there was something to send, ```-!- BACKLOG SENDING DONE``` tag is added to irssi window to find location what has been already sent.
 
