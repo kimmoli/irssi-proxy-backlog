@@ -19,7 +19,8 @@ $VERSION = "0.0.3";
 	changed         => "2014-08-29"
 );
 
-Irssi::settings_add_int($IRSSI{'name'}, 'proxy_backlog_lines',       10);
+Irssi::settings_add_int($IRSSI{'name'}, 'proxy_backlog_lines', 10);
+Irssi::settings_add_bool($IRSSI{'name'}, 'proxy_backlog_debug', 0);
 
 sub sendbacklog {
 	my ($server) = @_;
@@ -31,10 +32,13 @@ sub sendbacklog {
 	# get these here, no need to reload script
 	my $backlogLines = Irssi::settings_get_int('proxy_backlog_lines');
 	my $timestampLen = length(Irssi::settings_get_str('timestamp_format'));
+	my $debug = Irssi::settings_get_bool('proxy_backlog_debug');
 
 	Irssi::print("Sending backlog to proxy client for " . $server->{'tag'});
 
 	foreach my $channel ($server->channels) { # go through channels of this server
+
+		if ($debug) { Irssi::print("Processing channel ". $channel->{'name'}); }
 
 		Irssi::signal_add_first('print text', 'stop_sig');
 
@@ -100,10 +104,13 @@ sub sendbacklog {
 
 		Irssi::signal_remove('print text', 'stop_sig');
 
+		if ($debug) { Irssi::print("Done processing this channel. ". $numOfLines ." rows sent"); }
+
 		if ($numOfLines > 0) {
 			$server->print($channel->{'name'}, "BACKLOG SENDING DONE", MSGLEVEL_NO_ACT);
 		}
 	}
+	Irssi::print("Done sending backlogs");
 }
 
 sub stop_sig {
