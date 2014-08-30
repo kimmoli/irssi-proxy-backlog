@@ -26,9 +26,6 @@ sub sendbacklog {
 	my ($server) = @_;
 	my (@lines) = ();
 
-	my ($timenow) = DateTime->now();
-	$timenow->set_time_zone( 'local' );
-
 	# get these here, no need to reload script
 	my $backlogLines = Irssi::settings_get_int('proxy_backlog_lines');
 	my $timestampLen = length(Irssi::settings_get_str('timestamp_format'));
@@ -39,11 +36,19 @@ sub sendbacklog {
 	foreach my $channel ($server->channels) { # go through channels of this server
 
 		if ($debug) { Irssi::print("Processing channel ". $channel->{'name'}); }
-
-		Irssi::signal_add_first('print text', 'stop_sig');
+		if (!$debug) { Irssi::signal_add_first('print text', 'stop_sig'); }
 
 		my $window = $server->window_find_item($channel->{'name'});
+
+		if (!defined($window)) {
+			Irssi::print("Could not find window for ". $channel->{'name'});
+			next;
+		}
+
 		my $totalLines = 0;
+
+		my ($timenow) = DateTime->now();
+		$timenow->set_time_zone( 'local' );
 
 		for (my $line = $window->view->get_lines; defined($line); $line = $line->next) {
 			$totalLines ++;
@@ -102,9 +107,9 @@ sub sendbacklog {
 			Irssi::signal_emit('server incoming', $server,':proxy NOTICE ' . $channel->{'name'} .' :Backlog done. Showing '. $numOfLines .' of '. $totalLines );
 		}
 
-		Irssi::signal_remove('print text', 'stop_sig');
+		if (!$debug) { Irssi::signal_remove('print text', 'stop_sig'); }
 
-		if ($debug) { Irssi::print("Done processing this channel. ". $numOfLines ." rows sent"); }
+		if ($debug) { Irssi::print("Done processing this channel. ". $numOfLines ." rows of ". $totalLines ." sent"); }
 
 		if ($numOfLines > 0) {
 			$server->print($channel->{'name'}, "BACKLOG SENDING DONE", MSGLEVEL_NO_ACT);
