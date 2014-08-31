@@ -8,7 +8,7 @@ use Irssi::TextUI;
 use DateTime;
 use DateTime::Format::Strptime;
 
-$VERSION = "0.0.3";
+$VERSION = "0.0.4";
 %IRSSI = (
 	authors         => "Kimmo Lindholm",
 	contact         => "kimmo.lindholm@gmail.com",
@@ -16,7 +16,7 @@ $VERSION = "0.0.3";
 	url             => "",
 	description     => "sends backlog from irssi to clients connecting to irssiproxy",
 	license         => "GPL",
-	changed         => "2014-08-29"
+	changed         => "2014-08-31"
 );
 
 Irssi::settings_add_int($IRSSI{'name'}, 'proxy_backlog_lines', 10);
@@ -33,7 +33,9 @@ sub sendbacklog {
 
 	Irssi::print("Sending backlog to proxy client for " . $server->{'tag'});
 
-	foreach my $channel ($server->channels) { # go through channels of this server
+	CHANNEL: foreach my $channel ($server->channels) { # go through channels of this server
+
+		@lines = ();
 
 		if ($debug) { Irssi::print("Processing channel ". $channel->{'name'}); }
 		if (!$debug) { Irssi::signal_add_first('print text', 'stop_sig'); }
@@ -42,7 +44,7 @@ sub sendbacklog {
 
 		if (!defined($window)) {
 			Irssi::print("Could not find window for ". $channel->{'name'});
-			next;
+			next CHANNEL;
 		}
 
 		my $totalLines = 0;
@@ -66,20 +68,29 @@ sub sendbacklog {
 
 		if ($numOfLines > 0) {
 			#Irssi::signal_emit('server incoming', $server,':proxy NOTICE ' . $channel->{'name'} .' :***Backlog starts***');
-			for (my $i=0 ; $i<$numOfLines ; $i++ ) {
-				my $thisline = pop(@lines);
+			LINE: foreach my $thisline (reverse(@lines)) {
+				if ($debug) { Irssi::print("this line=" . $thisline ); }
+
 				my $m = "proxy";
 
 				if ($thisline =~ s/<.([^>]+)>//) {
 					$m = $1;
 				}
 
-				my $hour = substr $thisline, 0, 2;
-				my $min = substr $thisline, 3, 2;
+				my $hour = 0;
+				my $min = 0;
 
-				if ($thisline =~ s/--- Day changed //) {  # --- Day changed Thu Aug 28 2014
-					my $strp = DateTime::Format::Strptime->new(pattern   => '%a %b %d %Y');
+				if ($thisline =~ /^\d{2}:\d{2}/) {
+					$hour = substr $thisline, 0, 2;
+					$min = substr $thisline, 3, 2;
+				}
+
+				if ($thisline =~ s/Day changed to //) {
+					if ($debug) { Irssi::print("Changing date ". $thisline ); }
+					my $strp = DateTime::Format::Strptime->new(pattern   => '%d %b %Y', on_error  => 'croak');
 					$timenow = $strp->parse_datetime( $thisline ); 
+					$numOfLines --;
+					next LINE;
 				}
 
 				$timenow->set_time_zone( 'local' );
@@ -104,6 +115,8 @@ sub sendbacklog {
 				Irssi::signal_emit('server incoming', $server,'@time='. $year .'-'. $mon .'-'. $mday .'T'.$hour .':'. $min .':00.000Z :' . $m . $msgType . $channel->{'name'} .' :' . substr($thisline, ( $timestampLen+1 ) ));
 			}
 
+		}
+		if ($numOfLines > 0) {
 			Irssi::signal_emit('server incoming', $server,':proxy NOTICE ' . $channel->{'name'} .' :Backlog done. Showing '. $numOfLines .' of '. $totalLines );
 		}
 
