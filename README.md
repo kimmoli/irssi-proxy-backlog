@@ -17,4 +17,8 @@ If there was something to send, ```-!- BACKLOG SENDING DONE``` tag is added to i
 
 Change of day needs still some improvements to work properly.
 
-Tested with communi-sailfish 0.8 > https://github.com/communi/communi-sailfish/releases/tag/v0.8
+Tested with follogin clients:
+
+  - works: communi-sailfish 0.8 > https://github.com/communi/communi-sailfish/releases/tag/v0.8
+  - doesn't work: ChatZilla (Firefox addon)
+
