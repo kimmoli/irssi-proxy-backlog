@@ -85,10 +85,14 @@ sub sendbacklog {
 					$min = substr $thisline, 3, 2;
 				}
 
-				if ($thisline =~ s/Day changed to //) {
+				if ($thisline =~ s/^Day changed to //) {
 					if ($debug) { Irssi::print("Changing date ". $thisline ); }
-					my $strp = DateTime::Format::Strptime->new(pattern   => '%d %b %Y', on_error  => 'croak');
-					$timenow = $strp->parse_datetime( $thisline ); 
+					my $strp = DateTime::Format::Strptime->new(
+							pattern   => '%d %b %Y', 
+							locale    => $ENV{'LANG'},
+							on_error  => 'croak');
+					
+					eval { $timenow = $strp->parse_datetime( $thisline );  };
 					$numOfLines --;
 					next LINE;
 				}
